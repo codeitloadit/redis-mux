@@ -6,28 +6,19 @@ import (
 	"log"
 	"net"
 	"os"
+	"strings"
 )
 
-func dialRedis(redisHost string, hostConn net.Conn) net.Conn {
-	redisConn, err := net.Dial("tcp", redisHost)
-	if err != nil {
-		log.Fatal(err)
-	}
-	go func(c net.Conn) {
-		for {
-			reader := bufio.NewReader(c)
-			_, err := io.Copy(hostConn, reader)
-			if err != nil {
-				log.Fatal(err)
-			}
-		}
-	}(redisConn)
-	return redisConn
+var port string
+var clients []string
+
+func init() {
+	port = os.Getenv("REDIS_MUX_PORT")
+	clients = strings.Split(os.Getenv("REDIS_MUX_CLIENTS"), ",")
 }
 
 func main() {
-	port := os.Args[1]
-	redisHost := os.Args[2]
+	redisHost := clients[0]
 	listener, err := net.Listen("tcp", ":"+port)
 	if err != nil {
 		log.Fatal(err)
@@ -47,4 +38,21 @@ func main() {
 			c.Close()
 		}(hostConn)
 	}
+}
+
+func dialRedis(redisHost string, hostConn net.Conn) net.Conn {
+	redisConn, err := net.Dial("tcp", redisHost)
+	if err != nil {
+		log.Fatal(err)
+	}
+	go func(c net.Conn) {
+		for {
+			reader := bufio.NewReader(c)
+			_, err := io.Copy(hostConn, reader)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+	}(redisConn)
+	return redisConn
 }

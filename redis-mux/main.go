@@ -11,15 +11,20 @@ import (
 )
 
 var port string
-var clients []string
+var hosts []string
+var clientData ClientData
+
+type ClientData struct {
+	readers []io.Reader
+	writers []io.Writer
+}
 
 func init() {
 	port = os.Getenv("REDIS_MUX_PORT")
-	clients = strings.Split(os.Getenv("REDIS_MUX_CLIENTS"), ",")
+	hosts = strings.Split(os.Getenv("REDIS_MUX_CLIENTS"), ",")
 }
 
 func main() {
-	redisHost := clients[0]
 	listener, err := net.Listen("tcp", ":"+port)
 	if err != nil {
 		log.Fatal(err)
@@ -33,30 +38,33 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		redisConn := dialRedis(redisHost, hostConn)
-		go func(c net.Conn) {
-			_, err := io.Copy(redisConn, c)
-			if err != nil {
-				log.Fatal(err)
-			}
-			c.Close()
-		}(hostConn)
-	}
-}
 
-func dialRedis(redisHost string, hostConn net.Conn) net.Conn {
-	redisConn, err := net.Dial("tcp", redisHost)
-	if err != nil {
-		log.Fatal(err)
-	}
-	go func(c net.Conn) {
-		for {
-			reader := bufio.NewReader(c)
-			_, err := io.Copy(hostConn, reader)
+		for _, host := range hosts {
+			conn, err := net.Dial("tcp", host)
 			if err != nil {
 				log.Fatal(err)
 			}
+			clientData.readers = append(clientData.readers, bufio.NewReader(conn))
+			clientData.writers = append(clientData.writers, conn)
 		}
-	}(redisConn)
-	return redisConn
+
+		go func() {
+			for {
+				mr := io.MultiReader(clientData.readers...)
+				_, err := io.Copy(hostConn, mr)
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+		}()
+
+		go func() {
+			mw := io.MultiWriter(clientData.writers...)
+			_, err := io.Copy(mw, hostConn)
+			if err != nil {
+				log.Fatal(err)
+			}
+			hostConn.Close()
+		}()
+	}
 }

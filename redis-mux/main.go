@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"log"
 	"net"
@@ -24,6 +25,9 @@ func main() {
 		log.Fatal(err)
 	}
 	defer listener.Close()
+
+	fmt.Println("Listing on port", port)
+
 	for {
 		hostConn, err := listener.Accept()
 		if err != nil {

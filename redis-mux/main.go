@@ -39,20 +39,24 @@ func main() {
 		}
 		defer hostConn.Close()
 
-		var clientData ClientData
-
-		for _, host := range hosts {
-			conn, err := net.Dial("tcp", host)
-			if err != nil {
-				log.Fatal(err)
-			}
-			clientData.readers = append(clientData.readers, bufio.NewReader(conn))
-			clientData.writers = append(clientData.writers, conn)
-		}
-
-		go sendFromHostToClients(hostConn, clientData)
-		go sendFromClientsToHost(hostConn, clientData)
+		go handleConnection(hostConn)
 	}
+}
+
+func handleConnection(conn net.Conn) {
+	var clientData ClientData
+
+	for _, host := range hosts {
+		conn, err := net.Dial("tcp", host)
+		if err != nil {
+			log.Fatal(err)
+		}
+		clientData.readers = append(clientData.readers, bufio.NewReader(conn))
+		clientData.writers = append(clientData.writers, conn)
+	}
+
+	go sendFromHostToClients(conn, clientData)
+	go sendFromClientsToHost(conn, clientData)
 }
 
 func sendFromHostToClients(hostConn net.Conn, clientData ClientData) {

@@ -60,16 +60,16 @@ func handleConnection(conn net.Conn) {
 }
 
 func sendFromHostToClients(hostConn net.Conn, clientData ClientData) {
-	mr := io.MultiReader(clientData.readers...)
-	_, err := io.Copy(hostConn, mr)
+	mw := io.MultiWriter(clientData.writers...)
+	_, err := io.Copy(mw, hostConn)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
 func sendFromClientsToHost(hostConn net.Conn, clientData ClientData) {
-	mw := io.MultiWriter(clientData.writers...)
-	_, err := io.Copy(mw, hostConn)
+	mr := io.MultiReader(clientData.readers...)
+	_, err := io.Copy(hostConn, mr)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -22,7 +22,7 @@ func main() {
 		log.Fatal(err)
 	}
 	defer listener.Close()
-	fmt.Println("Listing on port", port)
+	fmt.Println("Listening on port", port)
 
 	for {
 		conn, err := listener.Accept()

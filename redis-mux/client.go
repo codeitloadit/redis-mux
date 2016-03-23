@@ -31,7 +31,7 @@ func (client *Client) handleRequest() {
 			n, err := client.conn.Read(msg)
 			msg = msg[:n]
 			if err != nil {
-				fmt.Printf("%s ERROR A %s\n", client.conn.RemoteAddr(), err)
+				fmt.Printf("%s -> ERROR %s\n", client.conn.RemoteAddr(), err)
 				return
 			}
 			fmt.Printf("%s -> %q\n", client.conn.RemoteAddr(), string(msg))
@@ -64,7 +64,7 @@ func (client *Client) handleRequest() {
 				fmt.Printf("%s <- %q\n", client.conn.RemoteAddr(), string(msg))
 				client.conn.Write(msg)
 			case err := <-client.errCh:
-				fmt.Printf("%s ERROR B %s\n", client.conn.RemoteAddr(), err)
+				fmt.Printf("%s <- ERROR %s\n", client.conn.RemoteAddr(), err)
 				return
 			}
 		}

@@ -44,7 +44,7 @@ func (client *Client) handleRequest() {
 	// Send messages from redis conns to client.
 	go func() {
 		for _, conn := range client.redisConns {
-			go func() {
+			go func(conn net.Conn) {
 				for {
 					msg := make([]byte, 1024)
 					n, err := conn.Read(msg)
@@ -54,7 +54,7 @@ func (client *Client) handleRequest() {
 					}
 					client.msgCh <- msg[:n]
 				}
-			}()
+			}(conn)
 		}
 
 		for {

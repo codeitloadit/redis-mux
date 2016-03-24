@@ -29,11 +29,11 @@ func (client *Client) handleRequest() {
 		for {
 			msg := make([]byte, 1024)
 			n, err := client.conn.Read(msg)
-			msg = msg[:n]
 			if err != nil {
 				fmt.Printf("%s -> ERROR %s\n", client.conn.RemoteAddr(), err)
 				return
 			}
+			msg = msg[:n]
 			fmt.Printf("%s -> %q\n", client.conn.RemoteAddr(), string(msg))
 			for _, conn := range client.redisConns {
 				conn.Write(msg)
@@ -48,12 +48,11 @@ func (client *Client) handleRequest() {
 				for {
 					msg := make([]byte, 1024)
 					n, err := conn.Read(msg)
-					msg = msg[:n]
 					if err != nil {
 						client.errCh <- err
 						return
 					}
-					client.msgCh <- msg
+					client.msgCh <- msg[:n]
 				}
 			}()
 		}

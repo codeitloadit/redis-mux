@@ -29,7 +29,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		client := Client{conn, make([]net.Conn, 0), make(chan []byte), make(chan error)}
+		client := Client{conn, make([]net.Conn, 0), make(chan []byte), make(chan error), false}
 		client.handleRequest()
 	}
 }

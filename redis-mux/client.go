@@ -11,6 +11,7 @@ type Client struct {
 	redisConns []net.Conn
 	msgCh      chan []byte
 	errCh      chan error
+	pending    bool
 }
 
 func (client *Client) handleRequest() {
@@ -35,6 +36,7 @@ func (client *Client) handleRequest() {
 			}
 			msg = msg[:n]
 			fmt.Printf("%s -> %q\n", client.conn.RemoteAddr(), string(msg))
+			client.pending = true
 			for _, conn := range client.redisConns {
 				conn.Write(msg)
 			}
@@ -61,7 +63,10 @@ func (client *Client) handleRequest() {
 			select {
 			case msg := <-client.msgCh:
 				fmt.Printf("%s <- %q\n", client.conn.RemoteAddr(), string(msg))
-				client.conn.Write(msg)
+				if client.pending {
+					client.conn.Write(msg)
+					client.pending = false
+				}
 			case err := <-client.errCh:
 				fmt.Printf("%s <- ERROR %s\n", client.conn.RemoteAddr(), err)
 				return
